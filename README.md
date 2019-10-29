@@ -51,7 +51,9 @@ A WYSIWYG for creating decentralised databases using IPFS and NuCypher
 
    ```bash
     cd umbral
+    pip install -r requirements.txt
     export FLASK_APP=app.py
+    export FLASK_DEBUG=1
     flask run
 
    ```
@@ -60,7 +62,7 @@ A WYSIWYG for creating decentralised databases using IPFS and NuCypher
 
    ```bash
       cd ..  #go to the root directory of the repo
-      yarn start
+      BROWSER=none yarn start
    ```
 
 6. Move to the `http://localhost:3000` to view the app
