@@ -16,7 +16,8 @@ from nucypher.config.characters import AliceConfiguration
 from nucypher.crypto.kits import UmbralMessageKit
 from nucypher.crypto.powers import DecryptingPower, SigningPower
 from nucypher.network.middleware import RestMiddleware
-from nucypher.utilities.logging import SimpleObserver
+# from nucypher.utilities.logging import SimpleObserver
+# from nucypher.utilities.logging import GlobalLoggerSettings
 from nucypher.keystore.keypairs import DecryptingKeypair, SigningKeypair
 from umbral.keys import UmbralPrivateKey, UmbralPublicKey
 
@@ -30,7 +31,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-globalLogPublisher.addObserver(SimpleObserver())
+# globalLogPublisher.addObserver(GlobalLoggerSettings())
 
 # We expect the url of the seednode as the first argument.
 SEEDNODE_URL = '127.0.0.1:11500'
@@ -150,43 +151,47 @@ def encryptData():
     #     "label": "1stlabel"
     #
     # }
-    json_data = json.loads(request.data.decode('utf-8'))
-    # fileFieldCount= int(json_data['fileFieldCount'])
-    #
-    # # object that contains the files
-    # file_obj={}
+    print(request.data)
+    # json_data = json.loads(request.data.decode('utf-8'))
+    json_data = request.form.to_dict(flat=True)
+    print('form_data', json_data)
+    fileFieldCount= int(json_data['fileFieldCount'])
+    
+    # object that contains the files
+    file_obj = {}
     # # object that contains all the other form fields
-    # form_field_obj ={}
+    form_field_obj = {}
     # print("requetssss ------")
-    # print(request.files.to_dict())
+    print(request.files.to_dict())
     # print(request.form.to_dict())
     # print('json_data')
     # print(json_data)
-    # fileNames = json.loads(json_data['fileNames'])
-    # textFields = json.loads(json_data['textFields'])
-    # for i in range(0, fileFieldCount):
-    #
-    #     file_obj[fileNames[str(i)]] = request.files[str(i)].read()
-    #
-    # textFieldsKeys = list(textFields.keys())
-    # for key in textFieldsKeys:
-    #   form_field_obj[key] = textFields[key]
-    #
-    #
-    # data_obj = {}
-    # data_obj['file_obj'] = file_obj
-    # data_obj['form_field_obj'] = form_field_obj
-    hash = json_data['msg']
+    fileNames = json.loads(json_data['fileNames'])
+    data_ = json.loads(json_data['textFields'])
+    for i in range(0, fileFieldCount):
+        file_obj[fileNames[str(i)]] = request.files[str(i)].read()
+    
+    textFieldsKeys = list(data_.keys())
+    for key in textFieldsKeys:
+      form_field_obj[key] = data_[key]
+
+    data_obj = {}
+    data_obj['file_obj'] = file_obj
+    data_obj['form_field_obj'] = form_field_obj
+    # hash = json_data['msg']
+    # data_obj = json_data['textFields']
     label = json_data['label']
     aliceFile = json_data['alice']
     password = json_data['password']
-    # file_url = '/tmp/' + label + '.json'
+    file_url = '/tmp/' + label + '.json'
     label = label.encode()
     # hash = data_obj
     # obj_to_be_stored = createDataObject(hash, json_data['label'])
-    # f = open(file_url, 'w')
-    # f.write(json.dumps(obj_to_be_stored))
-    # f.close()
+    obj_to_be_stored = createDataObject(data_obj, label)
+    with open(file_url, 'w') as f:
+        f.write(json.dumps(obj_to_be_stored))
+        # f.write(json.dumps(data_obj))
+        f.close()
 
 
     alice_config = AliceConfiguration.from_configuration_file(
@@ -208,8 +213,8 @@ def encryptData():
     enrico = Enrico(policy_encrypting_key=policy_pubkey)
 
     print ("Done upto 111")
-    hash = msgpack.dumps(hash, use_bin_type=True)
-    message_kit, _signature = enrico.encrypt_message(hash)
+    hash_ = msgpack.dumps(data_obj, use_bin_type=True)
+    message_kit, _signature = enrico.encrypt_message(hash_)
 
     message_kit_bytes = message_kit.to_bytes()
     newMsg = UmbralMessageKit.from_bytes(message_kit_bytes)

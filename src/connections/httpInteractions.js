@@ -74,6 +74,9 @@ async function encryptData(_username, _password, _aliceKey, _label, _array) {
     form.append("alice", _aliceKey);
     form.append("label", _label);
     console.log(form);
+    for (var key of form.entries()) {
+        console.log(key[0] + ', ' + key[1]);
+    }
 
     let content = await axios.post(url + "/encryptData", form, {
         headers: {

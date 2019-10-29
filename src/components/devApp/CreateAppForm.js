@@ -48,7 +48,8 @@ export default class CreateAppForm extends React.Component {
   addDelegateInfo = () => {
     this.setState(prevState => ({
       delegateInfo: prevState.delegateInfo.concat([
-        { username: "", publicKey: "" }
+        // { username: "", publicKey: "" }
+        { username: localStorage.getItem('adminUsername'), "publicKey": "" }
       ])
     }));
     this.addDelegate();
@@ -130,6 +131,7 @@ export default class CreateAppForm extends React.Component {
     }));
     this.state.delegateInfo.map(async (delegate, id) => {
       if (delegate.username === "") {
+        console.log('NO DELEGATE')
         return;
       } else {
         const callingObject = {
@@ -296,32 +298,32 @@ export default class CreateAppForm extends React.Component {
               </Button>
 
               <Row>
-                {/*<Col md={12}>*/}
-                {/*  {this.state.delegates.map((input, id) => {*/}
-                {/*    return (*/}
-                {/*      <DelegateInput*/}
-                {/*        key={input}*/}
-                {/*        toggleButtonState={bool => {*/}
-                {/*          this.toggleButtonState("delegateButtonState", bool);*/}
-                {/*        }}*/}
-                {/*        handleDelegaInfoChange={(username, publicKey) => {*/}
-                {/*          this.handleDelegaInfoChange(id, username, publicKey);*/}
-                {/*        }}*/}
-                {/*      />*/}
-                {/*    );*/}
-                {/*  })}*/}
-                {/*</Col>*/}
-                {/*<Col>*/}
-                {/*  <Button*/}
-                {/*    className="button"*/}
-                {/*    variant="primary"*/}
-                {/*    onClick={this.addDelegateInfo}*/}
-                {/*    disabled={this.state.delegateButtonState}*/}
-                {/*  >*/}
-                {/*    Add a delegate*/}
-                {/*  </Button>*/}
-                {/*</Col>*/}
-                {/*<Col sm={12} />*/}
+                <Col md={12}>
+                  {this.state.delegates.map((input, id) => {
+                    return (
+                      <DelegateInput
+                        key={input}
+                        toggleButtonState={bool => {
+                          this.toggleButtonState("delegateButtonState", bool);
+                        }}
+                        handleDelegaInfoChange={(username, publicKey) => {
+                          this.handleDelegaInfoChange(id, username, publicKey);
+                        }}
+                      />
+                    );
+                  })}
+                </Col>
+                <Col>
+                  <Button
+                    className="button"
+                    variant="primary"
+                    onClick={this.addDelegateInfo}
+                    disabled={this.state.delegateButtonState}
+                  >
+                    Add a delegate
+                  </Button>
+                </Col>
+                <Col sm={12} />
 
               </Row>
             </Form>
