@@ -468,9 +468,10 @@ def login():
    username = json_data['username']
    password = json_data['password']
    usernamearray = users.keys()
-   if (username in usernamearray):
-       return jsonify({"bool": False})
-   elif(users[username] == password):
+   # if (username in usernamearray):
+   #     return jsonify({"bool": False})
+   # el
+   if(users[username] == password):
        return jsonify({"bool" : True})
    else:
        return jsonify({"bool" : False})
@@ -574,3 +575,5 @@ def generate_doctor_keys(username):
         json.dump(doctor_pubkeys, f)
 
     return json.dumps(keys)
+
+app.run(host='0.0.0.0', debug=True)

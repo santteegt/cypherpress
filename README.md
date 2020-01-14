@@ -30,7 +30,7 @@ A WYSIWYG for creating decentralised databases using IPFS and NuCypher
    You can install ganache-cli by running the following command
 
    ```bash
-   npm intall -g ganache-cli
+   npm install -g ganache-cli
    ```
 
    Then it can be initiated using `ganache-cli`<br>
@@ -57,6 +57,12 @@ A WYSIWYG for creating decentralised databases using IPFS and NuCypher
     flask run
 
    ```
+
+5. Start Ganache
+
+  ```bash
+  ganache-cli
+  ```
 
 5. Run the WebApp
 
