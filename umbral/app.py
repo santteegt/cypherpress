@@ -50,24 +50,22 @@ users={
     "pranav":"hello123"
 };
 projects={};
-@app.route('/setContractAddress', methods=['POST'])
-def setContractAddress():
+
+@app.route('/register', methods=['POST'])
+def register():
     json_data = json.loads(request.data.decode('utf-8'))
+    print(json_data)
+    username = json_data['username']
+    password = json_data['password']
+    usernamearray = users.keys()
+    if(username in usernamearray):
+        return jsonify({"bool" : False})
+    else:
+        print('User added', username)
+        users[username] = password
+        projects[username] = []
+        return jsonify({"bool" : True})
 
-    contractAddress = json_data['contractAddress']
-    print(contractAddress, "cnotract address")
-    dappName = json_data['dappName']
-    contractAddressList[dappName] = contractAddress
-    return contractAddress
-
-@app.route('/getContractAddress', methods=['POST'])
-def getContractAddress():
-    json_data = json.loads(request.data.decode('utf-8'))
-
-    dappName = json_data['dappName']
-    contractAddress = contractAddressList[dappName]
-
-    return contractAddress
 
 @app.route('/setClientJson', methods=['POST'])
 def setClientJson():
@@ -78,6 +76,7 @@ def setClientJson():
     clientJsons[dappName] = clientJson
     return jsonify(clientJsons)
 
+
 @app.route('/getClientJson', methods=['POST'])
 def getClientJson():
     json_data = json.loads(request.data.decode('utf-8'))
@@ -86,12 +85,92 @@ def getClientJson():
     clientJson = clientJsons[dappName]
     return clientJson
 
+
+@app.route('/setContractAddress', methods=['POST'])
+def setContractAddress():
+    json_data = json.loads(request.data.decode('utf-8'))
+
+    contractAddress = json_data['contractAddress']
+    print(contractAddress, "cnotract address")
+    dappName = json_data['dappName']
+    contractAddressList[dappName] = contractAddress
+    return contractAddress
+
+
+@app.route('/getContractAddress', methods=['POST'])
+def getContractAddress():
+    json_data = json.loads(request.data.decode('utf-8'))
+
+    dappName = json_data['dappName']
+    contractAddress = contractAddressList[dappName]
+
+    return contractAddress
+
+
+@app.route('/addProject', methods=['POST'])
+def addProject():
+    json_data = json.loads(request.data.decode('utf-8'))
+    print(json_data)
+    username = json_data['username']
+    projectname = json_data['projectName']
+
+    usernamearray = users.keys()
+    print('usernamearray ===>>>>', usernamearray)
+    if username not in usernamearray:
+        return jsonify({"bool": False})
+    else:
+        projects[username].append(projectname)
+        return jsonify({"bool" : True})
+
+
+@app.route('/getProject', methods=['POST'])
+def getProject():
+    json_data = json.loads(request.data.decode('utf-8'))
+    print(json_data)
+    username = json_data['username']
+    usernamearray = users.keys()
+    if username not in usernamearray:
+        return jsonify({"projects": []})
+    else:
+        projectsMade = projects[username]
+        return jsonify({"projects" : projectsMade})
+
+'''
+    Generate keys for Bob (Consumer) role
+'''
+def generate_doctor_keys(username):
+    enc_privkey = UmbralPrivateKey.gen_key()
+    sig_privkey = UmbralPrivateKey.gen_key()
+
+
+    keys = {};
+    keys['enc'] = enc_privkey.to_bytes().hex()
+    keys['sig'] = sig_privkey.to_bytes().hex()
+
+    enc_pubkey = enc_privkey.get_pubkey()
+    sig_pubkey = sig_privkey.get_pubkey()
+
+    doctor_pubkeys = {
+        'enc': enc_pubkey.to_bytes().hex(),
+        'sig': sig_pubkey.to_bytes().hex()
+    }
+
+    BOB_PUBLIC_KEYS = os.path.join(os.getcwd(), 'bob/' + username + '.json')
+
+    with open(BOB_PUBLIC_KEYS, 'w') as f:
+        json.dump(doctor_pubkeys, f)
+
+    return json.dumps(keys)
+
+
+'''
+    Generate nucypher Keys
+'''
 @app.route("/generateKeys", methods=['POST'])
 def generateKeys():
 
     # Fetch JSON from request
     print('####')
-    print(request.data)
     json_data = json.loads(request.data.decode('utf-8'))
 
     # Fetch username and password
@@ -128,6 +207,9 @@ def generateKeys():
 
     return jsonify(data)
 
+'''
+    Encrypt data and returns policy
+'''
 @app.route('/encryptData',methods=['POST'])
 def encryptData():
     # { the object received in the request
@@ -155,9 +237,11 @@ def encryptData():
     # json_data = json.loads(request.data.decode('utf-8'))
     json_data = request.form.to_dict(flat=True)
     print('form_data', json_data)
+    ## comment
     fileFieldCount= int(json_data['fileFieldCount'])
     
     # object that contains the files
+    ## comment
     file_obj = {}
     # # object that contains all the other form fields
     form_field_obj = {}
@@ -166,8 +250,10 @@ def encryptData():
     # print(request.form.to_dict())
     # print('json_data')
     # print(json_data)
+    ## comment
     fileNames = json.loads(json_data['fileNames'])
     data_ = json.loads(json_data['textFields'])
+    ## comment for
     for i in range(0, fileFieldCount):
         file_obj[fileNames[str(i)]] = request.files[str(i)].read()
     
@@ -176,6 +262,7 @@ def encryptData():
       form_field_obj[key] = data_[key]
 
     data_obj = {}
+    ## comment
     data_obj['file_obj'] = file_obj
     data_obj['form_field_obj'] = form_field_obj
     # hash = json_data['msg']
@@ -241,6 +328,44 @@ def encryptData():
     return json.dumps(data)
 
 
+def createDataObject(plaintext, label):
+    # takes a plaintext object as input and returns a data object to be viewed as a document on the webapp
+    print(plaintext)
+    decrypted_obj = plaintext
+
+    file_obj = decrypted_obj['file_obj']
+    form_field_obj = decrypted_obj['form_field_obj']
+
+    data_obj = {}
+    data_obj['fileFieldCount'] = len(file_obj.keys())
+    data_obj['textFieldCount'] = len(form_field_obj.keys())
+    fileNameArray = list(file_obj.keys())
+    print('fileNameArray',fileNameArray)
+    files = {}
+    for fileName in fileNameArray:
+        print('fileName', fileName)
+        print(file_obj[fileName])
+        file_url = '/tmp/' + fileName + label
+        f = open(file_url, 'wb')
+
+        f.write(file_obj[fileName])
+        f.close()
+        files[fileName] = 'http://localhost:5000/decrypted?fileName=' +fileName + label
+
+    data_obj['files'] = files
+
+    textFieldLabelArray = list(form_field_obj.keys())
+    textFields = {}
+    for label in textFieldLabelArray:
+        textFields[label] = form_field_obj[label]
+
+    data_obj['textFields'] = textFields
+
+    return data_obj
+
+'''
+    Create policy for Box
+'''
 @app.route('/createPolicy', methods=['POST'])
 def createPolicy():
     print('data')
@@ -294,53 +419,12 @@ def createPolicy():
 
     return jsonify(data)
 
-
-def createDataObject(plaintext, label):
-    # takes a plaintext object as input and returns a data object to be viewed as a document on the webapp
-    print(plaintext)
-    decrypted_obj = plaintext
-
-    file_obj = decrypted_obj['file_obj']
-    form_field_obj = decrypted_obj['form_field_obj']
-
-    data_obj = {}
-    data_obj['fileFieldCount'] = len(file_obj.keys())
-    data_obj['textFieldCount'] = len(form_field_obj.keys())
-    fileNameArray = list(file_obj.keys())
-    print('fileNameArray',fileNameArray)
-    files = {}
-    for fileName in fileNameArray:
-        print('fileName', fileName)
-        print(file_obj[fileName])
-        file_url = '/tmp/' + fileName + label
-        f = open(file_url, 'wb')
-
-        f.write(file_obj[fileName])
-        f.close()
-        files[fileName] = 'http://localhost:5000/decrypted?fileName=' +fileName + label
-
-    data_obj['files'] = files
-
-    textFieldLabelArray = list(form_field_obj.keys())
-    textFields = {}
-    for label in textFieldLabelArray:
-        textFields[label] = form_field_obj[label]
-
-    data_obj['textFields'] = textFields
-
-    return data_obj
-
+'''
+    Decypt data using policy for bob
+'''
 @app.route('/decryptDelegated', methods=['POST'])
 def decryptDelegated():
-    # Fetch Request Data
-    # {
-    #     "bobKeys": "{\"enc\": \"40f05590a27491caf37049366fefd43e46034e4308f4f1fd233c166bc3980ab4\", \"sig\": \"3bcf21d3cb160118b499a883023569c60476f8731bd9eade11016c5030c1ca5d\"}",
-    #     "policy_public_key": "02aef01b40c0a62a9a1f650dd9a8381695e21a7b3826c748a5b64831aa0dd9862c",
-    #     "alice_sig_pubkey": "036c5d361000e6fbf3c4a84c98f924a3206e8a72c758a67e8300b5bee111b5fa97",
-    #     "label": "1stlabel",
-    #     "message": "messagekit",
-    #     "data_source": "03a38eef9fd09c9841585dea93791e139a3003d540539673c8c719af55e46c0c1b",
-    # }
+
     json_data = json.loads(request.data.decode('utf-8'))
     bob_private_keys = json.loads(json_data['bobKeys'])
     policy_public_key = json_data['policy_public_key']
@@ -477,50 +561,6 @@ def login():
        return jsonify({"bool" : False})
 
 
-@app.route('/register', methods=['POST'])
-def register():
-    json_data = json.loads(request.data.decode('utf-8'))
-    print(json_data)
-    username = json_data['username']
-    password = json_data['password']
-    usernamearray = users.keys()
-    if(username in usernamearray):
-        return jsonify({"bool" : False})
-    else:
-        users[username] = password
-        projects[username] = []
-        return jsonify({"bool" : True})
-
-
-@app.route('/addProject', methods=['POST'])
-def addProject():
-    json_data = json.loads(request.data.decode('utf-8'))
-    print(json_data)
-    username = json_data['username']
-    projectname = json_data['projectName']
-
-    usernamearray = users.keys()
-    if username not in usernamearray:
-        return jsonify({"bool": False})
-    else:
-        projects[username].append(projectname)
-        return jsonify({"bool" : True})
-
-
-@app.route('/getProject', methods=['POST'])
-def getProject():
-    json_data = json.loads(request.data.decode('utf-8'))
-    print(json_data)
-    username = json_data['username']
-    usernamearray = users.keys()
-    if username not in usernamearray:
-        return jsonify({"projects": []})
-    else:
-        projectsMade = projects[username]
-        return jsonify({"projects" : projectsMade})
-
-
-
 @app.route('/getProjectOwner', methods=['POST'])
 def getProjectOwner():
     json_data = json.loads(request.data.decode('utf-8'))
@@ -551,29 +591,5 @@ def _get_keys(file, key_class):
         keys[key_type] = key_class.from_bytes(bytes.fromhex(key_str))
     return keys
 
-
-def generate_doctor_keys(username):
-    enc_privkey = UmbralPrivateKey.gen_key()
-    sig_privkey = UmbralPrivateKey.gen_key()
-
-
-    keys = {};
-    keys['enc'] = enc_privkey.to_bytes().hex()
-    keys['sig'] = sig_privkey.to_bytes().hex()
-
-    enc_pubkey = enc_privkey.get_pubkey()
-    sig_pubkey = sig_privkey.get_pubkey()
-
-    doctor_pubkeys = {
-        'enc': enc_pubkey.to_bytes().hex(),
-        'sig': sig_pubkey.to_bytes().hex()
-    }
-
-    BOB_PUBLIC_KEYS = os.path.join(os.getcwd(), 'bob/' + username + '.json')
-
-    with open(BOB_PUBLIC_KEYS, 'w') as f:
-        json.dump(doctor_pubkeys, f)
-
-    return json.dumps(keys)
 
 app.run(host='0.0.0.0', debug=True)
